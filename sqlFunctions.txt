@@ -1,0 +1,76 @@
+create database sampleDB
+use sampleDB
+create table employees (empId uniqueidentifier default newid(), empName varchar(100), salary int, city varchar(100))
+select * from employees
+insert into  employees (empName, salary, city) values('Abc', 15000, 'abcCity'), ('Def', 18000, 'defCity'), ('Ghi', 18000, 'ghiCity'), ('Jkl', 18000, 'jklCity'), ('Mno', 20000, 'mnoCity')
+
+
+create function CheckEligibility(@empid uniqueidentifier)
+returns varchar(10)
+as
+begin
+    return (
+        select 
+            case 
+                when salary > 17000 then 'Eligible'
+                else 'Not Eligible'
+            end
+        from employees
+        where empid = @empid
+    );
+end;
+go
+
+select
+    empid, 
+    empName, 
+    salary, 
+    dbo.CheckEligibility(empid) as Eligibility
+from employees;
+
+
+create trigger salaryUpdate
+on employees
+after insert
+as
+begin
+    update e
+    set e.salary = e.salary + 1000
+    from employees e
+    INNER JOIN inserted i
+    on e.empid = i.empid;
+end;
+go
+
+insert into  employees (empName, salary, city) values('Pqr', 15000, 'pqrCity')
+select * from employees
+
+create procedure allRecs
+as
+select * from employees
+go;
+
+exec allRecs
+
+
+
+declare @empid uniqueidentifier, @empName varchar(100);
+
+declare employee_cursor cursor for
+select top 5 empid, empName
+from employees;
+
+open employee_cursor;
+
+fetch next from employee_cursor into @empid, @empName;
+
+
+while @@fetch_status = 0
+begin
+    print 'Employee ID: ' + cast(@empid as varchar(36)) + ', Name: ' + @empName;
+
+    fetch next from employee_cursor into @empid, @empName;
+end;
+
+close employee_cursor;
+deallocate employee_cursor;
